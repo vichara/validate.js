@@ -66,6 +66,8 @@
                       ,devAlert : '은 사용 할 수 없습니다.'    
                       ,devAlert2 : '객체 혹은 속성이 지정되어 있지 않습니다.'   
                       ,devAlert3 : '속성이 올바르지 않습니다.'
+                      ,fileBlackList : '[ {0} ] 에 해당[{1}]\n확장자는 업로드 할 수 없습니다.'
+                      ,fileWhiteList : '[ {0} ] 에 해당[{1}]\n확장자만 업로드 할 수 있습니다.'
                       ,num : '숫자'
                       ,eng : '영문'
                       ,han : '한글'
@@ -92,17 +94,17 @@
             }
    
             , setDefaults : function (obj) {
-            	if (typeof (obj) !== 'object') {
-            		return;
-            	}
-            	
-            	for(var oriKey in this.config) {
-            		for(var key in obj) {
-            			if(oriKey === key) {
-            				this.config[key] = obj[key];
-            			}
-                	}
-            	}
+                if (typeof (obj) !== 'object') {
+                    return;
+                }
+                
+                for(var oriKey in this.config) {
+                    for(var key in obj) {
+                        if (oriKey === key) {
+                            this.config[key] = obj[key];
+                        }
+                    }
+                }
             }
             
             , console : function (a) {
@@ -188,42 +190,72 @@
                 }
             }
             
-            , fieldValidation : function (_objs, _attr, _callBack) {
+            , fieldValidation : function (_attr) {
+                if (!_attr) {
+                    this.messageAlert('devAlert2');
+                    return;
+                }
                 
-                if (!_objs || !_attr) {
+                if ( Object.prototype.toString.call( _attr ) !== '[object Array]') {
+                    this.messageAlert('devAlert2');
+                    return;
+                }
+                
+                var returnBoo = true
+                for ( var j=0, len2 = _attr.length; j < len2; j++) {
+                    if (!this.fieldValidationMain(_attr[j]['target'], _attr[j], _attr[j]['callBack'])) {
+                        returnBoo = false;
+                        break;
+                    }
+                }
+                
+                return returnBoo;
+            }
+            
+            , fieldValidationMain : function (_objs, _attr, _callBack) {
+                
+                if (!_attr) {
                     this.messageAlert('devAlert2');
                     return this.callBack(false, _objs);
                 }
                 
                 try {
-                	
+                    
                     objs = _objs;
                     attr = _attr;
                     callBack = _callBack;
                     
+                    if (objs && typeof objs === 'string' && document.getElementById(objs)) {
+                        objs = document.getElementById(objs);
+                    }
+                    
+                    if (!objs) {
+                        this.messageAlert('devAlert2');
+                        return;
+                    }
+                    
                     this.convertAttribute();
                     
-                    
-                    len = _objs.length;
+                    len = objs.length;
                     
                     if (len) {
                         for (i=0; i<len; i++) {
-                            obj = _objs[i];
+                            obj = objs[i];
                             
                             return this.callBack(this.fieldValidationSub(obj),obj);
                         }
                     }
                     else {
-                        return this.callBack(this.fieldValidationSub(_objs),_objs);
+                        return this.callBack(this.fieldValidationSub(objs),objs);
                     }
                 }
                 catch (e) {
-                	if (e === 'E1') {
-                		this.config.alert(e);
-                	}
-                	else {
-                		this.console(e);
-                	}
+                    if (e === 'E1') {
+                        this.config.alert(e);
+                    }
+                    else {
+                        this.console(e);
+                    }
                 }
             }
             
@@ -231,36 +263,58 @@
                 
                 // Element 체크
                 if (!this.checkElement(_obj)) {
-                	return false;
+                    return false;
                 }
                 
                 // 타이틀 유무 설정
                 if (!this.checkTitle(_obj)) {
-                	return false;
+                    return false;
                 }
                 
                 callBackObj.title = attr['title'] || _obj.getAttribute('title');
                 
                 // 필수 입력값 체크
                 if (!this.validationRequired(_obj)) {
-                	return false;
+                    return false;
                 }
                 
                 // 길이 체크
                 if (!this.validationLength(_obj)) {
-                	return false;
+                    return false;
                 }
                 
                 // 데이터 타입 검증
                 if (!this.dataType(_obj)) {
-                	return false;
+                    return false;
+                }
+                
+                //fileCheck
+                if (!this.fileCheck(_obj)) {
+                    return false;
                 }
                 
                 return true;
             }
             
-            , eventHandler : function (_objs, _attr, _callBack) {
-                if (!_objs || !_attr) {
+            , eventHandler : function (_attr) {
+                if (!_attr) {
+                    this.messageAlert('devAlert2');
+                    return;
+                }
+                
+                if ( Object.prototype.toString.call( _attr ) !== '[object Array]') {
+                    this.messageAlert('devAlert2');
+                    return;
+                }
+                
+                for ( var j=0, len2 = _attr.length; j < len2; j++) {
+                    this.eventHandlerMain(_attr[j]['target'], _attr[j], _attr[j]['callBack']);
+                }
+            }
+            
+            
+            , eventHandlerMain : function (_objs, _attr, _callBack) {
+                if (!_attr) {
                     this.messageAlert('devAlert2');
                     return;
                 }
@@ -269,11 +323,21 @@
                 attr = _attr;
                 callBack = _callBack;
                 
+                
+                if (objs && typeof objs === 'string' && document.getElementById(objs)) {
+                    objs = document.getElementById(objs);
+                }
+                
+                if (!objs) {
+                    this.messageAlert('devAlert2');
+                    return;
+                }
+                
                 try {
-                	
-                	this.convertAttribute();
                     
-                    len = _objs.length;
+                    this.convertAttribute();
+                    
+                    len = objs.length;
                     
                     if (len) {
                         
@@ -284,17 +348,17 @@
                         }
                     }
                     else {
-                        this.eventHandlerSub(_objs);
-                        this.callBack(undefined, _objs);
+                        this.eventHandlerSub(objs);
+                        this.callBack(undefined, objs);
                     }
                 }
                 catch(e) {
-                	if (e === 'E1') {
-                		this.config.alert(e);
-                	}
-                	else {
-                		this.console(e);
-                	}
+                    if (e === 'E1') {
+                        this.config.alert(e);
+                    }
+                    else {
+                        this.console(e);
+                    }
                 }
             }
             
@@ -339,6 +403,37 @@
                 return true;
             }
             
+            , fileCheck : function (_obj) {
+                if (this.isNotEmpty(_obj.value) && _obj.getAttribute('type').toUpperCase() === 'FILE' && attr['file']) {
+                    
+                    var tmpValue = _obj.value.split('.').pop().toUpperCase();
+                    
+                    if (attr['file']['blackList']) {
+                        for ( i=0, len=attr['file']['blackList'].length; i < len; i++ ) {
+                            if (tmpValue !== attr['file']['blackList'][i].toUpperCase()) {
+                                continue;
+                            }
+                            
+                            this.messageAlert('fileBlackList',[callBackObj.title, attr['file']['blackList'].join(',')]);
+                            return false;
+                        }
+                    }
+                    
+                    if (attr['file']['whiteList']) {
+                        for ( i=0, len=attr['file']['whiteList'].length; i < len; i++ ) {
+                            if (tmpValue === attr['file']['whiteList'][i].toUpperCase()) {
+                                continue;
+                            }
+                            
+                            this.messageAlert('fileWhiteList',[callBackObj.title, attr['file']['whiteList'].join(',')]);
+                            return false;
+                        }
+                    }
+                }
+                
+                return true;
+            }
+            
             , checkTitle : function (_obj) {
                 if (!attr['title'] && !_obj.getAttribute('title')) {
                     this.messageAlert('requiredTitle');
@@ -364,13 +459,13 @@
             
             , checkElement : function (_obj) {
                 
-            	if (!this.isUseElement(_obj)) {
-            		this.console(_obj.nodeName + this.config.messages.devAlert);
-            		this.message('devAlert');
-            		return false;
-            	}
-            	
-            	return true;
+                if (!this.isUseElement(_obj)) {
+                    this.console(_obj.nodeName + this.config.messages.devAlert);
+                    this.message('devAlert');
+                    return false;
+                }
+                
+                return true;
             }
             
             , validationRequired : function (_obj) {
@@ -451,10 +546,13 @@
                 }
                 
                 if (attr['readOnly'] || attr['readOnly'] === 'true') {
-                    _obj.readOnly = true;
-                    
+                    this.fnReadOnly(_obj);
                     return true;
                 }
+            }
+            
+            , fnReadOnly : function (_obj) {
+                _obj.readOnly = true;
             }
             
             , dataType : function (_obj, _isEvent) {
@@ -514,40 +612,40 @@
             }
             
             , convertAttribute : function () {
-            	if (!attr || typeof attr === 'object') {
-            		return;
-            	}
-            	
-            	var resultAttr = {};
-            	
-            	if (attr.indexOf('|') > -1) {
-            		var arr = attr.split('|')
-            		,idx1
-            		,idx2;
-            		
-            		for (i=0, len = arr.length; i<len; i++) {
-            			idx1 = arr[i].indexOf('[');
-            			idx2 = arr[i].indexOf(']');
-            			
-            			if (idx1 > -1 && idx2 > -1) {
-            				resultAttr[arr[i].substring(0,idx1)] = arr[i].substring((idx1+1),idx2);
-            			}
-            			else if (idx1 == -1 && idx2 == -1) {
-            				resultAttr[arr[i]] = true;
-            			}
-            			else {
-            				throw 'E1';
-            			}
-            		}
-            		
-    				attr = resultAttr;
-            		
-            	}
-            	else {
-            		resultAttr[attr] = true;
-            		
-            		attr = resultAttr;
-            	}
+//                if (!attr || typeof attr === 'object') {
+//                    return;
+//                }
+//                
+//                var resultAttr = {};
+//                
+//                if (attr.indexOf('|') > -1) {
+//                    var arr = attr.split('|')
+//                    ,idx1
+//                    ,idx2;
+//                    
+//                    for (i=0, len = arr.length; i<len; i++) {
+//                        idx1 = arr[i].indexOf('[');
+//                        idx2 = arr[i].indexOf(']');
+//                        
+//                        if (idx1 > -1 && idx2 > -1) {
+//                            resultAttr[arr[i].substring(0,idx1)] = arr[i].substring((idx1+1),idx2);
+//                        }
+//                        else if (idx1 == -1 && idx2 == -1) {
+//                            resultAttr[arr[i]] = true;
+//                        }
+//                        else {
+//                            throw 'E1';
+//                        }
+//                    }
+//                    
+//                    attr = resultAttr;
+//                    
+//                }
+//                else {
+//                    resultAttr[attr] = true;
+//                    
+//                    attr = resultAttr;
+//                }
             }
             
             , messageAlert : function (_key, _arr) {
@@ -563,7 +661,7 @@
                 }
                 
                 for (i=0, len = _arr.length; i<len; i++) {
-                    if (_message.indexOf('{' + i + '}') == -1) {
+                    if (_message.indexOf('{' + i + '}') === -1) {
                         break;
                     }
                     
