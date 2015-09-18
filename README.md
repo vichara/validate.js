@@ -2,7 +2,7 @@
 form validate
 asd
 
-```
+```javascript
 	var d = document;
 	
 	validate.eventHandler([
