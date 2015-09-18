@@ -3,6 +3,12 @@ form validate
 asd
 
 ```javascript
+
+	
+	same
+	target : "id" == document.getElementById("id") == $("#id") 
+	
+	
 	var d = document;
 	
 	validate.eventHandler([
