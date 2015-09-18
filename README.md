@@ -1,6 +1,10 @@
 # validate.js
-form validate
-asd
+
+javascript 폼검증
+
+입력시 폼검증 eventHandler
+
+호출시 폼검증 fieldValidation
 
 ```javascript
 
